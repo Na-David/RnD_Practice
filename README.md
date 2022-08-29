@@ -2,3 +2,5 @@
 
 Python study
 Zero-Base
+
+Language: Python
