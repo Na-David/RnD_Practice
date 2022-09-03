@@ -5,3 +5,6 @@ print("The function is declared like this:")
 print("print ('what to print')")
 
 print("Hello " + "David!")
+
+name = "Welcome David"
+print(name)
