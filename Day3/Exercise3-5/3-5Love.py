@@ -7,7 +7,7 @@ name2 = input("What is their name? \n")
 #Write your code below this line 👇
 
 TRUE = 0
-
+LOVE = 0
 name = name1 + name2
 name = name.lower()
 t = name.count("t")
