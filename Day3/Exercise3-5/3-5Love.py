@@ -8,8 +8,8 @@ name2 = input("What is their name? \n")
 
 TRUE = 0
 LOVE = 0
-name = name1 + name2
-name = name.lower()
+full_name = name1 + name2
+full_name = name.lower()
 t = name.count("t")
 r = name.count("r")
 u = name.count("u")
