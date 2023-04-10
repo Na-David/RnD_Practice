@@ -103,14 +103,20 @@ def run(
                                                           exist_ok=True)  # make dir
 
     # Load model
+# Select the device to run the model on
     device = select_device(device)
-    # check whether the model is for segmentationable or not
+
+# Check if the model is for segmentation
     is_seg = '-seg' in str(yolo_weights)
-    # load model for specific backend
+
+# Load the model using the specified backend
     model = AutoBackend(yolo_weights, device=device, dnn=dnn, fp16=half)
-    # get the stride, name, model.pt
+
+# Get the stride, names, and pt from the model
     stride, names, pt = model.stride, model.names, model.pt
-    imgsz = check_imgsz(imgsz, stride=stride)  # check image size
+
+# Check the image size and adjust if necessary based on the stride
+    imgsz = check_imgsz(imgsz, stride=stride)
 
     # Dataloader
     bs = 1
