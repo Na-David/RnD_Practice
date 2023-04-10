@@ -6,4 +6,4 @@ Zero-Base
 Language: Python
 For ML
 
-100Days challenge
+## Yolo v8 Practice :: credit by https://github.com/mikel-brostrom/yolov8_tracking
