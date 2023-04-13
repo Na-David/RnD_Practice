@@ -10,7 +10,6 @@ from deep_sort_realtime.deepsort_tracker import DeepSort
 from stqdm import stqdm
 import streamlit as st
 
-# colors for visualization for image visualization
 COLORS = [(56, 56, 255), (151, 157, 255), (31, 112, 255), (29, 178, 255), (49, 210, 207), (10, 249, 72), (23, 204, 146),
           (134, 219, 61), (52, 147, 26), (187, 212, 0), (168, 153,
                                                          44), (255, 194, 0), (147, 69, 52), (255, 115, 100),
@@ -18,14 +17,6 @@ COLORS = [(56, 56, 255), (151, 157, 255), (31, 112, 255), (29, 178, 255), (49, 2
 
 
 def result_to_json(result: Results, names, tracker=None):
-    """
-    Convert result from ultralytics YOLOv8 prediction to json format
-    Parameters:
-        result: Results from ultralytics YOLOv8 prediction
-        tracker: DeepSort tracker
-    Returns:
-        result_list_json: detection result in json format
-    """
     len_results = len(result.boxes)
     result_list_json = [
         {
@@ -71,15 +62,6 @@ def result_to_json(result: Results, names, tracker=None):
 
 
 def view_result_ultralytics(result: Results, result_list_json, centers=None):
-    """
-    Visualize result from ultralytics YOLOv8 prediction using ultralytics YOLOv8 built-in visualization function
-    Parameters:
-        result: Results from ultralytics YOLOv8 prediction
-        result_list_json: detection result in json format
-        centers: list of deque of center points of bounding boxes
-    Returns:
-        result_image_ultralytics: result image from ultralytics YOLOv8 built-in visualization function
-    """
     result_image_ultralytics = result.plot()
     for result_json in result_list_json:
         class_color = COLORS[result_json['class_id'] % len(COLORS)]
@@ -96,17 +78,8 @@ def view_result_ultralytics(result: Results, result_list_json, centers=None):
 
 
 def view_result_default(result: Results, result_list_json, image, centers=None):
-    """
-    Visualize result from ultralytics YOLOv8 prediction using default visualization function
-    Parameters:
-        result: Results from ultralytics YOLOv8 prediction
-        result_list_json: detection result in json format
-        centers: list of deque of center points of bounding boxes
-    Returns:
-        result_image_default: result image from default visualization function
-    """
     ALPHA = 0.5
-#    image = result.orig_img
+    image = result.orig_img
     for result in result_list_json:
         class_color = COLORS[result['class_id'] % len(COLORS)]
         if 'mask' in result:
@@ -135,18 +108,7 @@ def view_result_default(result: Results, result_list_json, image, centers=None):
 
 
 def image_processing(frame, model, image_viewer=view_result_default, tracker=None, centers=None):
-    """
-    Process image frame using ultralytics YOLOv8 model and possibly DeepSort tracker if it is provided
-    Parameters:
-        frame: image frame
-        model: ultralytics YOLOv8 model
-        image_viewer: function to visualize result, default is view_result_default, can be view_result_ultralytics
-        tracker: DeepSort tracker
-        centers: list of deque of center points of bounding boxes
-    Returns:
-        result_image: result image with bounding boxes, class names, confidence scores, object masks, and possibly object IDs
-        result_list_json: detection result in json format
-    """
+
     names = model.names
     results = model.predict(frame)
     result_list_json = result_to_json(results[0], names, tracker=tracker)
@@ -156,18 +118,7 @@ def image_processing(frame, model, image_viewer=view_result_default, tracker=Non
 
 
 def video_processing(video_file, model, image_viewer=view_result_default, tracker=None, centers=None):
-    """
-    Process video file using ultralytics YOLOv8 model and possibly DeepSort tracker if it is provided
-    Parameters:
-        video_file: video file
-        model: ultralytics YOLOv8 model
-        image_viewer: function to visualize result, default is view_result_default, can be view_result_ultralytics
-        tracker: DeepSort tracker
-        centers: list of deque of center points of bounding boxes
-    Returns:
-        video_file_name_out: name of output video file
-        result_video_json_file: file containing detection result in json format
-    """
+
     results = model.predict(video_file)
     orig_img_shape = results[0].orig_shape
     names = model.names
@@ -191,7 +142,7 @@ def video_processing(video_file, model, image_viewer=view_result_default, tracke
     for result in stqdm(results, desc=f"Processing video"):
         result_list_json = result_to_json(result, names, tracker=tracker)
         result_image = image_viewer(
-            result, result_list_json, image, centers=centers)
+            result, result_list_json, centers=centers)
         video_writer.write(result_image)
         json.dump(result_list_json, json_file, indent=2)
         json_file.write(',\n')
