@@ -1,18 +1,17 @@
-from yolov5.utils.torch_utils import select_device
-from yolov5.utils.general import (
-    check_img_size, non_max_suppression, scale_coords)
-from yolov5.utils.datasets import LoadImages
-from yolov5.models.experimental import attempt_load
 from deep_sort_pytorch.deep_sort import DeepSort
 from deep_sort_pytorch.utils.parser import get_config
+from yolov5.utils.datasets import LoadImages
+from yolov5.models.experimental import attempt_load
+from yolov5.utils.torch_utils import select_device
+from yolov5.utils.general import check_img_size, non_max_suppression, scale_coords
 import sys
 from pathlib import Path
 import cv2
 
 # DeepSORT와 YOLOv5 디렉토리를 PATH에 추가
 CURRENT_DIR = Path(__file__).parent
-sys.path.insert(0, str(CURRENT_DIR / "yolov5"))
-sys.path.insert(0, str(CURRENT_DIR / "Yolov5_DeepSort_Pytorch"))
+sys.path.append(str(CURRENT_DIR / "yolov5"))
+sys.path.append(str(CURRENT_DIR / "Yolov5_DeepSort_Pytorch"))
 
 
 def main(input_video, output_video, yolo_weights):
