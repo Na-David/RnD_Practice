@@ -1,15 +1,18 @@
 import torch
 import cv2
-from yolov5 import models
+import os
 from deep_sort_pytorch.utils.parser import get_config
 from deep_sort_pytorch.deep_sort import DeepSort
 import tkinter as tk
 from tkinter import filedialog
 
-model = models.yolov5s(pretrained=True)
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 
 cfg = get_config()
-cfg.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+config_file = os.path.join(current_dir, "deep_sort.yaml")
+cfg.merge_from_file(config_file)
+# cfg.merge_from_file("deep_sort.yaml")
 
 deepsort = DeepSort(
     cfg.DEEPSORT.REID_CKPT,
