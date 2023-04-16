@@ -12,10 +12,12 @@ cfg = get_config()
 current_dir = os.path.dirname(os.path.abspath(__file__))
 config_file = os.path.join(current_dir, "deep_sort.yaml")
 cfg.merge_from_file(config_file)
-# cfg.merge_from_file("deep_sort.yaml")
+
+checkpoint_path = os.path.join(
+    current_dir, "deep_sort_pytorch/deep_sort/deep/checkpoint/ckpt.t7")
 
 deepsort = DeepSort(
-    cfg.DEEPSORT.REID_CKPT,
+    checkpoint_path,
     max_dist=cfg.DEEPSORT.MAX_DIST,
     min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
     nms_max_overlap=cfg.DEEPSORT.NMS_MAX_OVERLAP,
