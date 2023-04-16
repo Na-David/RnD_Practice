@@ -59,14 +59,15 @@ while cap.isOpened():
 
     # 시각화
     for track in trackers:
-        bbox_tlwh = track.to_tlwh()
-        x1, y1, w, h = bbox_tlwh
-        x2, y2 = x1 + w, y1 + h
+        bbox_tlwh = deepsort._tlwh_to_xyxy(track.to_tlwh())
+        x1, y1, x2, y2 = bbox_tlwh
         class_id, track_id = track.track_id
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
-        cv2.putText(frame, f"{class_id}-{track_id}", (x1, y1 - 10),
+        cv2.rectangle(frame, (int(x1), int(y1)),
+                      (int(x2), int(y2)), (255, 0, 0), 2)
+        cv2.putText(frame, f"{class_id}-{track_id}", (int(x1), int(y1) - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-        cv2.imshow("Result", frame)
+
+    cv2.imshow("Result", frame)
 
     # 키 입력을 대기하고 'q' 키를 누르면 종료합니다.
     if cv2.waitKey(1) & 0xFF == ord('q'):
