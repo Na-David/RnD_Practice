@@ -1,43 +1,73 @@
-from deep_sort_pytorch.deep_sort import DeepSort
-from deep_sort_pytorch.utils.parser import get_config
-from yolov5.utils.datasets import LoadImages
-from yolov5.models.experimental import attempt_load
-from yolov5.utils.torch_utils import select_device
-from yolov5.utils.general import check_img_size, non_max_suppression, scale_coords
-import sys
-from pathlib import Path
+import torch
 import cv2
+import os
+import numpy as np
+from deep_sort_pytorch.utils.parser import get_config
+from deep_sort_pytorch.deep_sort import DeepSort
+import tkinter as tk
+from tkinter import filedialog
 
-# DeepSORT와 YOLOv5 디렉토리를 PATH에 추가
-CURRENT_DIR = Path(__file__).parent
-sys.path.append(str(CURRENT_DIR / "yolov5"))
-sys.path.append(str(CURRENT_DIR / "Yolov5_DeepSort_Pytorch"))
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 
+cfg = get_config()
+current_dir = os.path.dirname(os.path.abspath(__file__))
+config_file = os.path.join(current_dir, "deep_sort.yaml")
+cfg.merge_from_file(config_file)
 
-def main(input_video, output_video, yolo_weights):
-    device = select_device('')
+checkpoint_path = os.path.join(
+    current_dir, "deep_sort_pytorch/deep_sort/deep/checkpoint/ckpt.t7")
 
-    # YOLOv5 모델 로드
-    model = attempt_load(yolo_weights, map_location=device)
-    img_size = check_img_size(640, s=model.stride.max())
+deepsort = DeepSort(
+    checkpoint_path,
+    max_dist=cfg.DEEPSORT.MAX_DIST,
+    min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
+    nms_max_overlap=cfg.DEEPSORT.NMS_MAX_OVERLAP,
+    max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
+    max_age=cfg.DEEPSORT.MAX_AGE,
+    n_init=cfg.DEEPSORT.N_INIT,
+    nn_budget=cfg.DEEPSORT.NN_BUDGET,
+    use_cuda=True
+)
 
-    # DeepSORT 설정
-    cfg = get_config()
-    cfg.merge_from_file("Yolov5_DeepSort_Pytorch/configs/deep_sort.yaml")
-    deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
-                        max_dist=cfg.DEEPSORT.MAX_DIST,
-                        min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
-                        nms_max_overlap=cfg.DEEPSORT.NMS_MAX_OVERLAP,
-                        max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
-                        max_age=cfg.DEEPSORT.MAX_AGE,
-                        n_init=cfg.DEEPSORT.N_INIT,
-                        nn_budget=cfg.DEEPSORT.NN_BUDGET,
-                        use_cuda=True)
+# 사용자에게 동영상 파일 선택 요청
+root = tk.Tk()
+root.withdraw()
+video_path = filedialog.askopenfilename(title="Select a video file")
 
-    # 동영상 처리
-    dataset = LoadImages(input_video, img_size=img_size)
-    writer = None
+cap = cv2.VideoCapture(video_path)
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-    for path, img, im0s, vid_cap in dataset:
-        img = torch.from_numpy(img).to(device)
-        img = img.float()  # uint8 to fp16
+    # 객체 탐지 수행
+    results = model(frame)
+
+    # 객체 추적 수행
+    detections = results.xyxy[0].numpy()
+    bbox_xywh = []
+    confidences = []
+
+    for det in detections:
+        x1, y1, x2, y2, conf, cls = det
+        bbox_xywh.append([(x1+x2)/2, (y1+y2)/2, x2-x1, y2-y1])
+        confidences.append(conf)
+
+    bbox_xywh = np.array(bbox_xywh)  # Add this line
+    trackers = deepsort.update(bbox_xywh, confidences, frame)
+
+    # 시각화
+    for track in trackers:
+        x1, y1, x2, y2, class_id, track_id = track.astype(int)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
+        cv2.putText(frame, f"{class_id}-{track_id}", (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        cv2.imshow("Result", frame)
+
+    # 키 입력을 대기하고 'q' 키를 누르면 종료합니다.
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# 자원 해제
+cap.release()
+cv2.destroyAllWindows()
