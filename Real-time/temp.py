@@ -7,8 +7,10 @@ from deep_sort_pytorch.deep_sort import DeepSort
 import tkinter as tk
 from tkinter import filedialog
 
+# Load YOLOv5 model
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 
+# Load DeepSORT configuration
 cfg = get_config()
 current_dir = os.path.dirname(os.path.abspath(__file__))
 config_file = os.path.join(current_dir, "deep_sort.yaml")
@@ -17,6 +19,7 @@ cfg.merge_from_file(config_file)
 checkpoint_path = os.path.join(
     current_dir, "deep_sort_pytorch/deep_sort/deep/checkpoint/ckpt.t7")
 
+# Initialize DeepSORT
 deepsort = DeepSort(
     checkpoint_path,
     max_dist=cfg.DEEPSORT.MAX_DIST,
@@ -29,7 +32,7 @@ deepsort = DeepSort(
     use_cuda=True
 )
 
-# 사용자에게 동영상 파일 선택 요청
+# Prompt user to select a video file
 root = tk.Tk()
 root.withdraw()
 video_path = filedialog.askopenfilename(title="Select a video file")
@@ -40,10 +43,10 @@ while cap.isOpened():
     if not ret:
         break
 
-    # 객체 탐지 수행
+    # Perform object detection
     results = model(frame)
 
-    # 객체 추적 수행
+    # Perform object tracking
     detections = results.xyxy[0].numpy()
     bbox_xywh = []
     confidences = []
@@ -53,21 +56,27 @@ while cap.isOpened():
         bbox_xywh.append([(x1+x2)/2, (y1+y2)/2, x2-x1, y2-y1])
         confidences.append(conf)
 
-    bbox_xywh = np.array(bbox_xywh)  # Add this line
+    bbox_xywh = np.array(bbox_xywh)
+    class_ids = [results.names[int(cls)] for cls in detections[:, -1]]
     trackers = deepsort.update(bbox_xywh, confidences, frame)
 
-    # 시각화
-    for track in trackers:
-        x1, y1, x2, y2, class_id, track_id = track.astype(int)
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
-        cv2.putText(frame, f"{class_id}-{track_id}", (x1, y1 - 10),
+    # Visualization
+    for idx, track in enumerate(trackers):
+        x1, y1, x2, y2, track_id = track
+        # x1, y1, x2, y2 = bbox_tlwh
+        class_id = class_ids[idx]
+        # track_id = track.track_id
+        cv2.rectangle(frame, (int(x1), int(y1)),
+                      (int(x2), int(y2)), (255, 0, 0), 2)
+        cv2.putText(frame, f"{class_id}-{track_id}", (int(x1), int(y1) - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-        cv2.imshow("Result", frame)
 
-    # 키 입력을 대기하고 'q' 키를 누르면 종료합니다.
+    cv2.imshow("Result", frame)
+
+    # Wait for key input and exit if 'q' key is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# 자원 해제
+# Release resources
 cap.release()
 cv2.destroyAllWindows()

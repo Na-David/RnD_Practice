@@ -38,6 +38,11 @@ root.withdraw()
 video_path = filedialog.askopenfilename(title="Select a video file")
 
 cap = cv2.VideoCapture(video_path)
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
+output_video_path = 'output.avi'
+out = cv2.VideoWriter(output_video_path, fourcc, 20.0,
+                      (int(cap.get(3)), int(cap.get(4))))
+
 while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
@@ -61,7 +66,7 @@ while cap.isOpened():
     trackers = deepsort.update(bbox_xywh, confidences, frame)
 
     # Visualization
-    for idx, track in enumerate(trackers):
+    for idx, track in enumerate(trackers[:len(class_ids)]):
         x1, y1, x2, y2, track_id = track
         # x1, y1, x2, y2 = bbox_tlwh
         class_id = class_ids[idx]
@@ -72,11 +77,13 @@ while cap.isOpened():
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
     cv2.imshow("Result", frame)
+    out.write(frame)
 
     # Wait for key input and exit if 'q' key is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 # Release resources
+out.release()
 cap.release()
 cv2.destroyAllWindows()
