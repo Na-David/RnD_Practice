@@ -62,10 +62,10 @@ while cap.isOpened():
 
     # Visualization
     for idx, track in enumerate(trackers):
-        bbox_tlwh = deepsort._tlwh_to_xyxy(track)
-        x1, y1, x2, y2 = bbox_tlwh
+        x1, y1, x2, y2, track_id = track
+        # x1, y1, x2, y2 = bbox_tlwh
         class_id = class_ids[idx]
-        track_id = track.track_id
+        # track_id = track.track_id
         cv2.rectangle(frame, (int(x1), int(y1)),
                       (int(x2), int(y2)), (255, 0, 0), 2)
         cv2.putText(frame, f"{class_id}-{track_id}", (int(x1), int(y1) - 10),
